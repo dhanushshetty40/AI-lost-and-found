@@ -178,8 +178,8 @@ def compute_multimodal_match(lost_report: Report, found_report: Report) -> Dict[
                 vision_notes.append(f"📷 Vision Analysis: {gemini_res['explanation']}")
         else:
             # Fallback if no Gemini key or offline
-            image_score = round(max(75.0, min(95.0, text_score + 10.0)), 2)
-            vision_notes.append(f"📷 Visual compatibility baseline ({image_score}%) computed.")
+            image_score = 0.0
+            vision_notes.append("📷 Visual compatibility baseline: No visual match detected.")
             
     elif path_lost or path_found:
         image_mode = "SINGLE"
@@ -208,14 +208,27 @@ def compute_multimodal_match(lost_report: Report, found_report: Report) -> Dict[
 
     # Dynamic Weight Rebalancing
     if image_mode == "BOTH":
-        # Balanced 5-way ensemble
-        overall_score = (
-            (0.30 * text_score) +
-            (0.25 * image_score) +
-            (0.20 * attribute_score) +
-            (0.15 * location_score) +
-            (0.10 * date_score)
-        )
+        # If visual evidence strongly conflicts (image_score < 20%), apply visual mismatch penalty
+        if image_score < 20.0:
+            vision_notes.append("⚠ Visual Mismatch: Uploaded photographs show clearly distinct items.")
+            overall_score = (
+                (0.20 * text_score) +
+                (0.40 * image_score) +
+                (0.15 * attribute_score) +
+                (0.15 * location_score) +
+                (0.10 * date_score)
+            )
+            # Cap overall score to prevent false positive match
+            overall_score = min(overall_score, 35.0)
+        else:
+            # Balanced 5-way ensemble
+            overall_score = (
+                (0.30 * text_score) +
+                (0.25 * image_score) +
+                (0.20 * attribute_score) +
+                (0.15 * location_score) +
+                (0.10 * date_score)
+            )
     elif image_mode == "SINGLE":
         # Mildly reduce image weight, boost text and attributes
         overall_score = (

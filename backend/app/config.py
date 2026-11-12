@@ -1,5 +1,10 @@
 import os
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
+
+# Explicitly load .env file from the backend root directory
+env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+load_dotenv(env_path)
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "SmartFind AI - Lost & Found Matching System"
@@ -19,5 +24,6 @@ class Settings(BaseSettings):
 
     class Config:
         case_sensitive = True
+        extra = "allow"
 
 settings = Settings()
