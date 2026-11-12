@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Sparkles, CheckCircle2, XCircle, MapPin, Calendar, Tag, ShieldCheck, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Sparkles, CheckCircle2, XCircle, MapPin, Calendar, Tag, ShieldCheck, HelpCircle, User } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import matchService from '../services/matchService';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -122,9 +122,14 @@ export const MatchComparisonPage = () => {
       }}>
         {/* LEFT: Lost Item Card */}
         <div className="card" style={{ borderTop: '4px solid var(--accent-rose)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <span className="badge badge-danger">LOST ITEM</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: 6 }}>
+            <span className="badge badge-danger">🔴 LOST ITEM</span>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Report #{lost_report.id}</span>
+          </div>
+
+          {/* Reporter line */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', color: 'var(--accent-rose)', fontWeight: 700, marginBottom: '0.75rem' }}>
+            <User size={14} /> Reported by: {lost_report.user?.full_name || `User #${lost_report.user_id}`}
           </div>
 
           {lostImg ? (
@@ -153,9 +158,14 @@ export const MatchComparisonPage = () => {
 
         {/* RIGHT: Found Item Card */}
         <div className="card" style={{ borderTop: '4px solid var(--accent-emerald)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <span className="badge badge-success">FOUND ITEM</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: 6 }}>
+            <span className="badge badge-success">🟢 FOUND ITEM</span>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Report #{found_report.id}</span>
+          </div>
+
+          {/* Reporter line */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', color: 'var(--accent-emerald)', fontWeight: 700, marginBottom: '0.75rem' }}>
+            <User size={14} /> Reported by: {found_report.user?.full_name || `User #${found_report.user_id}`}
           </div>
 
           {foundImg ? (

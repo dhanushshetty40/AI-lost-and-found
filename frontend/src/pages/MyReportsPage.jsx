@@ -225,6 +225,9 @@ export const MyReportsPage = () => {
                                       <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 800 }}>
                                         🟢 FOUND ITEM #{found.id}
                                       </span>
+                                      <div style={{ fontSize: '0.75rem', color: 'var(--accent-emerald)', fontWeight: 600, marginTop: 1 }}>
+                                        Reported by: <strong>{found.user?.full_name || `User #${found.user_id}`}</strong>
+                                      </div>
                                       <h4 style={{ color: '#fff', margin: '2px 0 4px', fontSize: '1rem' }}>{found.item_name}</h4>
                                       <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                         Found at: {found.location} on {found.incident_date}

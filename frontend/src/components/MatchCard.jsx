@@ -77,6 +77,9 @@ export const MatchCard = ({ match, onConfirmDecision, onDeleteMatch }) => {
           <span style={{ fontSize: '0.72rem', color: '#ef4444', fontWeight: 800, textTransform: 'uppercase' }}>
             🔴 LOST ITEM #{lost_report.id}
           </span>
+          <div style={{ fontSize: '0.73rem', color: 'var(--accent-rose)', fontWeight: 600, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <User size={11} /> {lost_report.user?.full_name || `User #${lost_report.user_id}`}
+          </div>
           <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#fff', margin: '2px 0 4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {lost_report.item_name}
           </h4>
@@ -108,6 +111,9 @@ export const MatchCard = ({ match, onConfirmDecision, onDeleteMatch }) => {
           <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 800, textTransform: 'uppercase' }}>
             🟢 FOUND ITEM #{found_report.id}
           </span>
+          <div style={{ fontSize: '0.73rem', color: 'var(--accent-emerald)', fontWeight: 600, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <User size={11} /> {found_report.user?.full_name || `User #${found_report.user_id}`}
+          </div>
           <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#fff', margin: '2px 0 4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {found_report.item_name}
           </h4>
