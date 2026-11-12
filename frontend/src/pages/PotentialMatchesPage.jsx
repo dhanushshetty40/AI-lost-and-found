@@ -44,6 +44,17 @@ export const PotentialMatchesPage = () => {
     }
   };
 
+  const handleDeleteMatch = async (matchId) => {
+    if (!window.confirm("Are you sure you want to dismiss / delete this AI match?")) return;
+    try {
+      await matchService.deleteMatch(matchId);
+      addToast("AI Match dismissed successfully", "success");
+      fetchMatches();
+    } catch (err) {
+      addToast(err.response?.data?.detail || "Failed to delete match", "error");
+    }
+  };
+
   return (
     <div style={{ maxWidth: 1280, margin: '0 auto', padding: '2rem 1.5rem 4rem' }}>
       {/* Header Banner */}
@@ -155,7 +166,12 @@ export const PotentialMatchesPage = () => {
           gap: '1.5rem'
         }}>
           {matchesData.items.map((m) => (
-            <MatchCard key={m.id} match={m} onConfirmDecision={fetchMatches} />
+            <MatchCard
+              key={m.id}
+              match={m}
+              onConfirmDecision={fetchMatches}
+              onDeleteMatch={handleDeleteMatch}
+            />
           ))}
         </div>
       ) : (

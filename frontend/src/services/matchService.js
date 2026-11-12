@@ -26,6 +26,12 @@ export const matchService = {
       params: { action }
     });
     return response.data;
+  },
+
+  // Delete / dismiss an AI match
+  deleteMatch: async (matchId) => {
+    const response = await api.delete(`/matches/${matchId}`);
+    return response.data;
   }
 };
 

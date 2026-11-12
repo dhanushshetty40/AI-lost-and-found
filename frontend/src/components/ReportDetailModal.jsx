@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { X, MapPin, Calendar, Tag, ShieldCheck, User, Sparkles, AlertCircle, QrCode, Clock, CheckCircle2, Award } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import QRCodeModal from './QRCodeModal';
 import LifecycleTimeline from './LifecycleTimeline';
 import HandoverConfirmModal from './HandoverConfirmModal';
 
 export const ReportDetailModal = ({ report, onClose, onClaimItem, onRefresh }) => {
+  const { user } = useAuth();
   const [showQRModal, setShowQRModal] = useState(false);
   const [showHandoverModal, setShowHandoverModal] = useState(false);
   const [showTimeline, setShowTimeline] = useState(true);
 
   if (!report) return null;
 
+  const isOwner = user && report.user_id === user.id;
   const isLost = report.report_type === 'LOST';
   const isResolved = report.status === 'RESOLVED' || report.status === 'CLAIMED' || report.status === 'CLOSED';
   const API_BASE = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:8000';
@@ -68,11 +71,14 @@ export const ReportDetailModal = ({ report, onClose, onClaimItem, onRefresh }) =
 
           {/* Modal Title Banner */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: '1.25rem', paddingRight: '2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span className={`badge ${isLost ? 'badge-danger' : 'badge-success'}`}>
-                {report.report_type} REPORT
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span className={`badge ${isLost ? 'badge-danger' : 'badge-success'}`} style={{ fontWeight: 800 }}>
+                {isLost ? '🔴 LOST REPORT' : '🟢 FOUND REPORT'}
               </span>
-              <span className="badge badge-primary">{report.status}</span>
+              {isOwner && (
+                <span className="badge badge-primary">✓ YOUR REPORT</span>
+              )}
+              <span className="badge badge-secondary">{report.status}</span>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Report ID #{report.id}</span>
             </div>
 
@@ -217,16 +223,26 @@ export const ReportDetailModal = ({ report, onClose, onClaimItem, onRefresh }) =
             )}
 
             {!isLost && onClaimItem && !isResolved && (
-              <button
-                onClick={() => {
-                  onClose();
-                  onClaimItem(report);
-                }}
-                className="btn btn-primary"
-                style={{ backgroundColor: 'var(--accent-emerald)', borderColor: 'var(--accent-emerald)' }}
-              >
-                <ShieldCheck size={16} /> File Ownership Claim
-              </button>
+              isOwner ? (
+                <button
+                  disabled
+                  className="btn btn-secondary"
+                  style={{ opacity: 0.6, cursor: 'not-allowed' }}
+                >
+                  Your Report (Cannot Claim)
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    onClose();
+                    onClaimItem(report);
+                  }}
+                  className="btn btn-primary"
+                  style={{ backgroundColor: 'var(--accent-emerald)', borderColor: 'var(--accent-emerald)' }}
+                >
+                  <ShieldCheck size={16} /> File Ownership Claim
+                </button>
+              )
             )}
           </div>
         </div>

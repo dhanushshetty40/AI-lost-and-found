@@ -86,8 +86,8 @@ export const ClaimModal = ({ report, onClose, onSuccess }) => {
             <ShieldCheck size={24} />
           </div>
           <div>
-            <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#fff' }}>File Ownership Claim</h3>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Claiming Found Item #{report.id}: {report.item_name}</span>
+            <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#fff' }}>Prove Ownership & Claim</h3>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Claiming Found Item #{report.id}: <strong>{report.item_name}</strong> (Found by {report.user?.full_name || 'Campus Finder'})</span>
           </div>
         </div>
 
@@ -101,24 +101,24 @@ export const ClaimModal = ({ report, onClose, onSuccess }) => {
           color: 'var(--text-main)',
           marginBottom: '1.25rem'
         }}>
-          💡 To prevent fraudulent claims, describe specific unique markings, serial numbers, hidden contents, or wallpaper. The AI verification engine will score your answer. Contact information will be released upon approval.
+          💡 <strong>Security Check:</strong> The person who found this item set a challenge question below. Answer it accurately to prove your ownership. Once verified, direct pickup and contact details will be released to you.
         </div>
 
         {/* Claim Form */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div>
-            <label className="input-label" style={{ fontWeight: 700, color: '#fff', marginBottom: 6 }}>
-              Ownership Verification Question *
+            <label className="input-label" style={{ fontWeight: 700, color: 'var(--accent-emerald)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <ShieldCheck size={16} /> Question Asked by Finder ({report.user?.full_name || 'Finder'}) *
             </label>
-            <div style={{ fontSize: '0.88rem', color: '#fff', marginBottom: 8, padding: '0.75rem 1rem', backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: 8 }}>
-              ❓ {report.verification_question && report.verification_question.trim() ? report.verification_question : `Please describe any distinctive markings, serial numbers, wallpapers, or proof of ownership for '${report.item_name}'.`}
+            <div style={{ fontSize: '0.92rem', color: '#fff', marginBottom: 8, padding: '0.85rem 1.1rem', backgroundColor: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.4)', borderRadius: 8, fontWeight: 600 }}>
+              "{report.verification_question && report.verification_question.trim() ? report.verification_question : `Please describe any distinctive markings, serial numbers, wallpapers, or proof of ownership for '${report.item_name}'.`}"
             </div>
             <textarea
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
               rows={4}
               className="input-field"
-              placeholder="Type your answer to the question above..."
+              placeholder="Type your answer to the finder's question above..."
               required
             />
           </div>

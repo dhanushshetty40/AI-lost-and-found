@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Calendar, Tag, Info, Eye, Clock, ShieldCheck } from 'lucide-react';
+import { MapPin, Calendar, Tag, Info, Eye, Clock, ShieldCheck, User } from 'lucide-react';
 
 export const ReportCard = ({ report, onViewDetails, onEdit, onDelete, isOwner, isAdmin }) => {
   const isLost = report.report_type === 'LOST';
@@ -23,13 +23,16 @@ export const ReportCard = ({ report, onViewDetails, onEdit, onDelete, isOwner, i
     }
   };
 
+  const reporterName = report.user?.full_name || (isOwner ? "You" : `User #${report.user_id}`);
+
   return (
     <div className="card" style={{
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
       position: 'relative',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      border: isOwner ? '1px solid rgba(59, 130, 246, 0.4)' : '1px solid var(--border)'
     }}>
       {/* Type Indicator Line */}
       <div style={{
@@ -37,8 +40,8 @@ export const ReportCard = ({ report, onViewDetails, onEdit, onDelete, isOwner, i
         top: 0,
         left: 0,
         right: 0,
-        height: 4,
-        backgroundColor: isLost ? 'var(--accent-rose)' : 'var(--accent-emerald)'
+        height: 5,
+        backgroundColor: isLost ? '#ef4444' : '#10b981'
       }} />
 
       {/* Image Thumbnail Header */}
@@ -68,10 +71,31 @@ export const ReportCard = ({ report, onViewDetails, onEdit, onDelete, isOwner, i
         )}
 
         {/* Floating Badges */}
-        <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 6 }}>
-          <span className={`badge ${isLost ? 'badge-danger' : 'badge-success'}`}>
-            {report.report_type}
+        <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <span style={{
+            padding: '4px 10px',
+            borderRadius: 6,
+            fontWeight: 800,
+            fontSize: '0.75rem',
+            letterSpacing: '0.5px',
+            backgroundColor: isLost ? '#ef4444' : '#10b981',
+            color: '#fff',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
+          }}>
+            {isLost ? '🔴 LOST REPORT' : '🟢 FOUND REPORT'}
           </span>
+          {isOwner && (
+            <span style={{
+              padding: '4px 8px',
+              borderRadius: 6,
+              fontWeight: 700,
+              fontSize: '0.72rem',
+              backgroundColor: '#3b82f6',
+              color: '#fff'
+            }}>
+              ✓ YOUR REPORT
+            </span>
+          )}
         </div>
 
         <div style={{ position: 'absolute', top: 10, right: 10 }}>
@@ -81,6 +105,12 @@ export const ReportCard = ({ report, onViewDetails, onEdit, onDelete, isOwner, i
 
       {/* Card Content Body */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {/* Reporter info */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', color: isOwner ? 'var(--primary)' : 'var(--text-muted)', marginBottom: 6 }}>
+          <User size={13} />
+          <span>Reported by: <strong>{reporterName}</strong></span>
+        </div>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 4 }}>
           <Tag size={13} color="var(--primary)" />
           <span>{report.category}</span>

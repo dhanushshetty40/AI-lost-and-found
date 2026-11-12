@@ -1,8 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, ArrowRight, MapPin, Calendar, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
+import { Sparkles, ArrowRight, MapPin, Calendar, CheckCircle2, AlertTriangle, XCircle, Trash2, User } from 'lucide-react';
 
-export const MatchCard = ({ match, onConfirmDecision }) => {
+export const MatchCard = ({ match, onConfirmDecision, onDeleteMatch }) => {
   const navigate = useNavigate();
 
   if (!match || !match.lost_report || !match.found_report) return null;
@@ -16,9 +16,6 @@ export const MatchCard = ({ match, onConfirmDecision }) => {
   const scoreColor = isHigh ? '#10b981' : isMedium ? '#3b82f6' : '#f59e0b';
 
   const API_BASE = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:8000';
-
-  const lostImg = lost_report.image_url ? (lost_report.image_url.startsWith('http') ? lost_report.image_url : `${API_BASE}${lost_report.image_url}`) : null;
-  const foundImg = found_report.image_url ? (found_report.image_url.startsWith('http') ? found_report.image_url : `${API_BASE}${found_report.image_url}`) : null;
 
   return (
     <div className="card" style={{
@@ -77,16 +74,16 @@ export const MatchCard = ({ match, onConfirmDecision }) => {
       }}>
         {/* Lost Report Brief */}
         <div>
-          <span style={{ fontSize: '0.7rem', color: 'var(--accent-rose)', fontWeight: 700, textTransform: 'uppercase' }}>
-            LOST ITEM #{lost_report.id}
+          <span style={{ fontSize: '0.72rem', color: '#ef4444', fontWeight: 800, textTransform: 'uppercase' }}>
+            🔴 LOST ITEM #{lost_report.id}
           </span>
           <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#fff', margin: '2px 0 4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {lost_report.item_name}
           </h4>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>
             {lost_report.category}
           </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: 4 }}>
             <MapPin size={12} /> {lost_report.location}
           </div>
         </div>
@@ -108,16 +105,16 @@ export const MatchCard = ({ match, onConfirmDecision }) => {
 
         {/* Found Report Brief */}
         <div>
-          <span style={{ fontSize: '0.7rem', color: 'var(--accent-emerald)', fontWeight: 700, textTransform: 'uppercase' }}>
-            FOUND ITEM #{found_report.id}
+          <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 800, textTransform: 'uppercase' }}>
+            🟢 FOUND ITEM #{found_report.id}
           </span>
           <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#fff', margin: '2px 0 4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {found_report.item_name}
           </h4>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>
             {found_report.category}
           </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: 4 }}>
             <MapPin size={12} /> {found_report.location}
           </div>
         </div>
@@ -131,14 +128,30 @@ export const MatchCard = ({ match, onConfirmDecision }) => {
       )}
 
       {/* Action Footer */}
-      <div style={{ display: 'flex', gap: '0.75rem', marginTop: 'auto', paddingTop: '0.5rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'auto', paddingTop: '0.5rem' }}>
         <button
           onClick={() => navigate(`/matches/${match.id}`)}
-          className="btn btn-primary btn-full"
-          style={{ fontSize: '0.85rem' }}
+          className="btn btn-primary"
+          style={{ flex: 1, fontSize: '0.85rem' }}
         >
-          Compare Side-by-Side & Details
+          Compare Details
         </button>
+
+        {onDeleteMatch && (
+          <button
+            onClick={() => onDeleteMatch(match.id)}
+            className="btn btn-sm"
+            style={{
+              backgroundColor: 'rgba(239, 68, 68, 0.15)',
+              color: '#f87171',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              padding: '0 0.75rem'
+            }}
+            title="Dismiss / Delete AI Match"
+          >
+            <Trash2 size={16} />
+          </button>
+        )}
       </div>
     </div>
   );

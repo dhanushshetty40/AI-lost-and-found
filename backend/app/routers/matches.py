@@ -267,3 +267,25 @@ def confirm_match_decision(
         
     db.commit()
     return {"message": f"AI Match status updated to {match.status}", "match_id": match_id}
+
+
+@router.delete("/{match_id}")
+def delete_ai_match(
+    match_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete / dismiss an AI match recommendation."""
+    match = db.query(AIMatch).filter(AIMatch.id == match_id).first()
+    if not match:
+        raise HTTPException(status_code=404, detail="AI Match not found")
+
+    is_admin = current_user.role.upper() == "ADMIN"
+    user_report_ids = [r.id for r in db.query(Report.id).filter(Report.user_id == current_user.id).all()]
+    if not is_admin and match.lost_report_id not in user_report_ids and match.found_report_id not in user_report_ids:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this match")
+
+    db.delete(match)
+    db.commit()
+    return {"message": "AI match dismissed successfully", "match_id": match_id}
+
