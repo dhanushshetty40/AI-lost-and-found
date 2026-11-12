@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FileText, PlusCircle, Search, Trash2, Edit, Eye, Filter, Sparkles, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { FileText, PlusCircle, Search, Trash2, Edit, Eye, Filter, Sparkles, ArrowRight, ShieldCheck, CheckCircle2, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import reportService from '../services/reportService';
@@ -25,6 +25,7 @@ export const MyReportsPage = () => {
   const [selectedReport, setSelectedReport] = useState(null);
   const [editingReport, setEditingReport] = useState(null);
   const [claimingReport, setClaimingReport] = useState(null);
+  const [targetMatchId, setTargetMatchId] = useState(null);
 
   const fetchMyReportsAndMatches = async () => {
     setLoading(true);
@@ -60,12 +61,23 @@ export const MyReportsPage = () => {
     }
   };
 
+  const handleInspectMatch = (match) => {
+    if (match.is_verified) {
+      // Already verified & remembered: go directly to full comparison view
+      navigate(`/matches/${match.id}`);
+    } else {
+      // Must answer finder's question first to unlock full details
+      setTargetMatchId(match.id);
+      setClaimingReport(match.found_report);
+    }
+  };
+
   const lostReports = reports.filter(r => r.report_type === 'LOST');
   const foundReports = reports.filter(r => r.report_type === 'FOUND');
 
   // Find best match for a specific lost report
   const getMatchesForLostReport = (lostReportId) => {
-    return matches.filter(m => m.lost_report_id === lostReportId);
+    return matches.filter(m => m.lost_report_id === lostReportId && m.found_report != null);
   };
 
   return (
@@ -80,9 +92,9 @@ export const MyReportsPage = () => {
         marginBottom: '2rem'
       }}>
         <div>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff' }}>My Filed Reports & AI Matches</h1>
+          <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff' }}>My Reports & AI Matches</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: 4 }}>
-            Track your lost items with active AI match recommendations, or manage items you found on campus.
+            Zero-leak privacy protection: Verify ownership with the finder to unlock confidential photos and full comparison.
           </p>
         </div>
 
@@ -142,7 +154,7 @@ export const MyReportsPage = () => {
                 return (
                   <div key={lost.id} className="card" style={{ padding: '1.5rem', border: '1px solid rgba(239, 68, 68, 0.35)', backgroundColor: 'rgba(15, 23, 42, 0.4)' }}>
                     {/* Header info */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem', flexWrap: 'wrap', gap: 8 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <span style={{ backgroundColor: '#ef4444', color: '#fff', padding: '4px 10px', borderRadius: 6, fontWeight: 800, fontSize: '0.75rem' }}>
                           🔴 MY LOST REPORT #{lost.id}
@@ -175,12 +187,14 @@ export const MyReportsPage = () => {
                             const found = m.found_report;
                             const isHigh = m.overall_score >= 75;
                             const scoreColor = isHigh ? '#10b981' : '#3b82f6';
+                            const isVerified = m.is_verified;
+
                             return (
                               <div
                                 key={m.id}
                                 style={{
                                   display: 'grid',
-                                  gridTemplateColumns: 'minmax(200px, 1fr) auto minmax(240px, 1.2fr)',
+                                  gridTemplateColumns: 'minmax(200px, 1fr) auto minmax(260px, 1.3fr)',
                                   gap: '1.25rem',
                                   alignItems: 'center',
                                   backgroundColor: 'rgba(255, 255, 255, 0.02)',
@@ -218,38 +232,58 @@ export const MyReportsPage = () => {
                                   </div>
                                 </div>
 
-                                {/* Right: Matching Found Item & Claim Action */}
+                                {/* Right: Matching Found Item with Zero-Leak Lock */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                     <div>
-                                      <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 800 }}>
-                                        🟢 FOUND ITEM #{found.id}
-                                      </span>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                                        <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 800 }}>
+                                          🟢 FOUND ITEM #{found.id}
+                                        </span>
+                                        {isVerified ? (
+                                          <span style={{ fontSize: '0.68rem', backgroundColor: '#10b981', color: '#fff', padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>
+                                            ✓ VERIFIED OWNER
+                                          </span>
+                                        ) : (
+                                          <span style={{ fontSize: '0.68rem', backgroundColor: '#f59e0b', color: '#000', padding: '2px 6px', borderRadius: 4, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3 }}>
+                                            <Lock size={10} /> VERIFICATION REQUIRED
+                                          </span>
+                                        )}
+                                      </div>
+
                                       <div style={{ fontSize: '0.75rem', color: 'var(--accent-emerald)', fontWeight: 600, marginTop: 1 }}>
                                         Reported by: <strong>{found.user?.full_name || `User #${found.user_id}`}</strong>
                                       </div>
-                                      <h4 style={{ color: '#fff', margin: '2px 0 4px', fontSize: '1rem' }}>{found.item_name}</h4>
+
+                                      <h4 style={{ color: '#fff', margin: '2px 0 4px', fontSize: '1rem' }}>
+                                        {found.item_name}
+                                      </h4>
+
                                       <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                        Found at: {found.location} on {found.incident_date}
+                                        Category: {found.category} | Zone: {found.location}
                                       </span>
                                     </div>
                                   </div>
 
+                                  {/* Verification Action / Unlocked Access */}
                                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: 8 }}>
-                                    <button
-                                      onClick={() => setSelectedReport(found)}
-                                      className="btn btn-outline btn-sm"
-                                      style={{ fontSize: '0.8rem' }}
-                                    >
-                                      View Item
-                                    </button>
-                                    <button
-                                      onClick={() => setClaimingReport(found)}
-                                      className="btn btn-primary btn-sm"
-                                      style={{ backgroundColor: '#10b981', borderColor: '#10b981', fontSize: '0.8rem' }}
-                                    >
-                                      <ShieldCheck size={14} /> Claim This Item
-                                    </button>
+                                    {isVerified ? (
+                                      <button
+                                        onClick={() => navigate(`/matches/${m.id}`)}
+                                        className="btn btn-primary btn-sm"
+                                        style={{ backgroundColor: '#10b981', borderColor: '#10b981', fontSize: '0.82rem' }}
+                                      >
+                                        <CheckCircle2 size={14} /> View Unlocked Details & Compare
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => handleInspectMatch(m)}
+                                        className="btn btn-primary btn-sm"
+                                        style={{ backgroundColor: '#f59e0b', color: '#000', borderColor: '#f59e0b', fontWeight: 800, fontSize: '0.82rem' }}
+                                      >
+                                        <ShieldCheck size={14} /> Answer Finder's Question & Unlock
+                                      </button>
+                                    )}
                                   </div>
                                 </div>
                               </div>
@@ -325,12 +359,21 @@ export const MyReportsPage = () => {
         />
       )}
 
-      {/* Claim Modal */}
+      {/* Claim & Verification Modal */}
       {claimingReport && (
         <ClaimModal
           report={claimingReport}
-          onClose={() => setClaimingReport(null)}
-          onSuccess={fetchMyReportsAndMatches}
+          onClose={() => {
+            setClaimingReport(null);
+            setTargetMatchId(null);
+          }}
+          onSuccess={() => {
+            addToast("Ownership verified successfully! Full match details unlocked.", "success");
+            fetchMyReportsAndMatches();
+            if (targetMatchId) {
+              navigate(`/matches/${targetMatchId}`);
+            }
+          }}
         />
       )}
 

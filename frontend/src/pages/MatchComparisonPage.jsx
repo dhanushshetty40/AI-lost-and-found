@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Sparkles, CheckCircle2, XCircle, MapPin, Calendar, Tag, ShieldCheck, HelpCircle, User } from 'lucide-react';
+import { ArrowLeft, Sparkles, CheckCircle2, XCircle, MapPin, Calendar, Tag, ShieldCheck, HelpCircle, User, Lock } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 import matchService from '../services/matchService';
+import ClaimModal from '../components/ClaimModal';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 export const MatchComparisonPage = () => {
   const { matchId } = useParams();
   const navigate = useNavigate();
   const { addToast } = useToast();
+  const { user } = useAuth();
 
   const [match, setMatch] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
 
   const fetchMatchDetails = async () => {
     setLoading(true);
@@ -48,7 +52,7 @@ export const MatchComparisonPage = () => {
   if (loading) return <LoadingSpinner label="Loading AI Match Comparison Matrix..." />;
   if (!match || !match.lost_report || !match.found_report) return null;
 
-  const { lost_report, found_report, overall_score, confidence_level, breakdown, explanation, status } = match;
+  const { lost_report, found_report, overall_score, confidence_level, breakdown, explanation, status, is_verified } = match;
 
   const API_BASE = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:8000';
 
@@ -56,6 +60,9 @@ export const MatchComparisonPage = () => {
   const foundImg = found_report.image_url ? (found_report.image_url.startsWith('http') ? found_report.image_url : `${API_BASE}${found_report.image_url}`) : null;
 
   const scoreColor = overall_score >= 75 ? '#10b981' : overall_score >= 45 ? '#3b82f6' : '#f59e0b';
+  const isOwnerOfLost = user && user.id === lost_report.user_id;
+  const isFoundReporter = user && user.id === found_report.user_id;
+  const isAuthorized = is_verified || isFoundReporter || (user && user.role?.toUpperCase() === 'ADMIN');
 
   return (
     <div style={{ maxWidth: 1180, margin: '2rem auto', padding: '0 1.5rem 4rem' }}>
@@ -157,7 +164,7 @@ export const MatchComparisonPage = () => {
         </div>
 
         {/* RIGHT: Found Item Card */}
-        <div className="card" style={{ borderTop: '4px solid var(--accent-emerald)' }}>
+        <div className="card" style={{ borderTop: '4px solid var(--accent-emerald)', position: 'relative' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: 6 }}>
             <span className="badge badge-success">🟢 FOUND ITEM</span>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Report #{found_report.id}</span>
@@ -168,28 +175,74 @@ export const MatchComparisonPage = () => {
             <User size={14} /> Reported by: {found_report.user?.full_name || `User #${found_report.user_id}`}
           </div>
 
-          {foundImg ? (
-            <div style={{ width: '100%', height: 200, borderRadius: 'var(--radius-md)', overflow: 'hidden', marginBottom: '1rem', backgroundColor: '#0f172a' }}>
-              <img src={foundImg} alt={found_report.item_name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          {!isAuthorized ? (
+            /* LOCKED / ZERO-LEAK SHIELD STATE */
+            <div style={{
+              padding: '2.5rem 1.5rem',
+              backgroundColor: 'rgba(15, 23, 42, 0.95)',
+              borderRadius: 'var(--radius-md)',
+              border: '2px dashed rgba(245, 158, 11, 0.4)',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 12
+            }}>
+              <div style={{ padding: 14, borderRadius: '50%', backgroundColor: 'rgba(245, 158, 11, 0.15)', color: 'var(--accent-amber)' }}>
+                <Lock size={32} />
+              </div>
+              <h4 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>
+                Details Protected by Finder
+              </h4>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', maxWidth: 360, lineHeight: 1.5, margin: 0 }}>
+                To prevent false claims, confidential photographs and distinctive markings are hidden until you answer the finder's security question.
+              </p>
+              <button
+                onClick={() => setShowVerificationModal(true)}
+                className="btn btn-primary"
+                style={{ backgroundColor: '#f59e0b', color: '#000', borderColor: '#f59e0b', fontWeight: 800, marginTop: 8 }}
+              >
+                <ShieldCheck size={16} /> Answer Finder's Question & Unlock
+              </button>
             </div>
           ) : (
-            <div style={{ width: '100%', height: 120, borderRadius: 'var(--radius-md)', backgroundColor: 'rgba(255, 255, 255, 0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', marginBottom: '1rem' }}>
-              No image uploaded
-            </div>
+            /* UNLOCKED DETAILS (Verified & Remembered) */
+            <>
+              {foundImg ? (
+                <div style={{ width: '100%', height: 200, borderRadius: 'var(--radius-md)', overflow: 'hidden', marginBottom: '1rem', backgroundColor: '#0f172a' }}>
+                  <img src={foundImg} alt={found_report.item_name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                </div>
+              ) : (
+                <div style={{ width: '100%', height: 120, borderRadius: 'var(--radius-md)', backgroundColor: 'rgba(255, 255, 255, 0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', marginBottom: '1rem' }}>
+                  No image uploaded
+                </div>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                <span style={{ fontSize: '0.72rem', backgroundColor: '#10b981', color: '#fff', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>
+                  ✓ VERIFIED & UNLOCKED
+                </span>
+              </div>
+
+              <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#fff', marginBottom: '0.75rem' }}>{found_report.item_name}</h3>
+
+              <div style={{ display: 'grid', gap: '0.5rem', fontSize: '0.88rem', color: 'var(--text-main)' }}>
+                <div><strong>Category:</strong> {found_report.category}</div>
+                {found_report.brand && <div><strong>Brand:</strong> {found_report.brand}</div>}
+                {found_report.color && <div><strong>Color:</strong> {found_report.color}</div>}
+                <div><strong>Location:</strong> <span style={{ color: 'var(--accent-emerald)' }}>{found_report.location}</span></div>
+                <div><strong>Incident Date:</strong> {found_report.incident_date}</div>
+                <div style={{ marginTop: 8, padding: '0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.02)', borderRadius: 8, fontSize: '0.85rem' }}>
+                  <strong>Description:</strong><br />{found_report.description}
+                </div>
+                {found_report.distinctive_features && (
+                  <div style={{ marginTop: 4, padding: '0.75rem', backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: 8, fontSize: '0.85rem' }}>
+                    <strong style={{ color: 'var(--accent-emerald)' }}>Distinctive Markings:</strong><br />{found_report.distinctive_features}
+                  </div>
+                )}
+              </div>
+            </>
           )}
-
-          <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#fff', marginBottom: '0.75rem' }}>{found_report.item_name}</h3>
-
-          <div style={{ display: 'grid', gap: '0.5rem', fontSize: '0.88rem', color: 'var(--text-main)' }}>
-            <div><strong>Category:</strong> {found_report.category}</div>
-            {found_report.brand && <div><strong>Brand:</strong> {found_report.brand}</div>}
-            {found_report.color && <div><strong>Color:</strong> {found_report.color}</div>}
-            <div><strong>Location:</strong> <span style={{ color: 'var(--accent-emerald)' }}>{found_report.location}</span></div>
-            <div><strong>Incident Date:</strong> {found_report.incident_date}</div>
-            <div style={{ marginTop: 8, padding: '0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.02)', borderRadius: 8, fontSize: '0.85rem' }}>
-              <strong>Description:</strong><br />{found_report.description}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -307,6 +360,19 @@ export const MatchComparisonPage = () => {
           </button>
         </div>
       </div>
+
+      {/* Claim & Verification Modal (Zero-Leak) */}
+      {showVerificationModal && found_report && (
+        <ClaimModal
+          report={found_report}
+          onClose={() => setShowVerificationModal(false)}
+          onSuccess={() => {
+            addToast("Ownership verified successfully! Found item details unlocked.", "success");
+            setShowVerificationModal(false);
+            fetchMatchDetails();
+          }}
+        />
+      )}
     </div>
   );
 };

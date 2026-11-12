@@ -72,12 +72,8 @@ export const Navbar = () => {
 
           {isAuthenticated && (
             <>
-              <Link to="/my-reports" style={{ color: 'var(--text-muted)', fontSize: '0.88rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5 }}>
-                <Layers size={16} color="var(--primary)" /> My Reports
-              </Link>
-
-              <Link to="/matches" style={{ color: '#60a5fa', fontSize: '0.88rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
-                <Sparkles size={16} color="var(--primary)" /> AI Matches
+              <Link to="/my-reports" style={{ color: '#60a5fa', fontSize: '0.88rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
+                <Sparkles size={16} color="var(--primary)" /> My Reports & AI Matches
               </Link>
 
               <Link to="/claims" style={{ color: 'var(--text-muted)', fontSize: '0.88rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5 }}>

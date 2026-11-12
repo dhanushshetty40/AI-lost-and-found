@@ -6,7 +6,7 @@ from sqlalchemy import or_, and_
 
 from app.database import get_db
 from app.models.user import User
-from app.models.report import Report
+from app.models.report import Report, Claim
 from app.models.match import AIMatch
 from app.schemas.match import MatchResponse, MatchListResponse, RunMatchResponse
 from app.deps import get_current_user
@@ -159,6 +159,13 @@ def list_ai_matches(
     med_count = 0
     low_count = 0
     
+    # Get set of verified found report IDs for current user
+    user_claims = db.query(Claim).filter(
+        Claim.claimant_id == current_user.id,
+        Claim.status.in_(["PENDING", "UNDER_REVIEW", "APPROVED", "COMPLETED"])
+    ).all()
+    verified_found_ids = {c.report_id: c.id for c in user_claims}
+
     for m in matches:
         if m.confidence_level == "HIGH":
             high_count += 1
@@ -171,6 +178,15 @@ def list_ai_matches(
             exp_list = json.loads(m.explanation)
         except Exception:
             exp_list = [m.explanation]
+
+        is_verified = False
+        claim_id = None
+        # User is verified if they own the lost report and filed a claim, or if they own the found report, or admin
+        if current_user.role.upper() == "ADMIN" or (m.found_report and m.found_report.user_id == current_user.id):
+            is_verified = True
+        elif m.found_report_id in verified_found_ids:
+            is_verified = True
+            claim_id = verified_found_ids[m.found_report_id]
             
         item_dict = {
             "id": m.id,
@@ -188,6 +204,8 @@ def list_ai_matches(
             "explanation": exp_list,
             "status": m.status,
             "created_at": m.created_at,
+            "is_verified": is_verified,
+            "claim_id": claim_id,
             "lost_report": m.lost_report,
             "found_report": m.found_report
         }
@@ -217,6 +235,20 @@ def get_match_by_id(
         exp_list = json.loads(match.explanation)
     except Exception:
         exp_list = [match.explanation]
+
+    is_verified = False
+    claim_id = None
+    if current_user.role.upper() == "ADMIN" or (match.found_report and match.found_report.user_id == current_user.id):
+        is_verified = True
+    else:
+        user_claim = db.query(Claim).filter(
+            Claim.claimant_id == current_user.id,
+            Claim.report_id == match.found_report_id,
+            Claim.status.in_(["PENDING", "UNDER_REVIEW", "APPROVED", "COMPLETED"])
+        ).first()
+        if user_claim:
+            is_verified = True
+            claim_id = user_claim.id
         
     return {
         "id": match.id,
@@ -234,6 +266,8 @@ def get_match_by_id(
         "explanation": exp_list,
         "status": match.status,
         "created_at": match.created_at,
+        "is_verified": is_verified,
+        "claim_id": claim_id,
         "lost_report": match.lost_report,
         "found_report": match.found_report
     }

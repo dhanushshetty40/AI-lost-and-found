@@ -20,6 +20,8 @@ class MatchResponse(BaseModel):
     explanation: List[str]
     status: str
     created_at: datetime
+    is_verified: bool = False
+    claim_id: Optional[int] = None
     lost_report: Optional[ReportResponse] = None
     found_report: Optional[ReportResponse] = None
 

@@ -198,6 +198,12 @@ def delete_report(
             detail="You do not have permission to delete this report."
         )
         
+    # Cascade clean any associated AI matches
+    from app.models.match import AIMatch
+    db.query(AIMatch).filter(
+        (AIMatch.lost_report_id == report_id) | (AIMatch.found_report_id == report_id)
+    ).delete(synchronize_session=False)
+
     db.delete(report)
     db.commit()
     return {"message": "Report deleted successfully", "id": report_id}
