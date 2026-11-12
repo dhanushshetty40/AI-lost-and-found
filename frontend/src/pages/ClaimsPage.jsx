@@ -168,9 +168,14 @@ export const ClaimsPage = () => {
                   </div>
                 )}
 
-                {/* Verification Answer */}
+                {/* Verification Question & Answer */}
                 <div style={{ fontSize: '0.88rem', marginBottom: '1rem' }}>
-                  <strong style={{ color: '#fff' }}>Claimant's Verification Answer:</strong>
+                  {c.verification_question && (
+                    <div style={{ marginBottom: 8, padding: '0.6rem 0.85rem', backgroundColor: 'rgba(59, 130, 246, 0.08)', borderRadius: 8, color: '#fff' }}>
+                      <strong style={{ color: 'var(--primary)' }}>Verification Challenge:</strong> "{c.verification_question}"
+                    </div>
+                  )}
+                  <strong style={{ color: '#fff' }}>Claimant's Answer:</strong>
                   <div style={{ marginTop: 4, padding: '0.75rem', backgroundColor: 'rgba(15, 23, 42, 0.6)', borderRadius: 8, color: 'var(--text-muted)', lineHeight: 1.4 }}>
                     "{c.verification_answer}"
                   </div>

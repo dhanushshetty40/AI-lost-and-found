@@ -71,6 +71,8 @@ def create_report(
         color=report_in.color,
         distinctive_features=report_in.distinctive_features,
         additional_info=report_in.additional_info,
+        verification_question=report_in.verification_question,
+        confidential_notes=report_in.confidential_notes,
         location=report_in.location,
         incident_date=report_in.incident_date,
         incident_time=report_in.incident_time,

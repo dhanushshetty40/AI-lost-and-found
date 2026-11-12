@@ -110,15 +110,15 @@ export const ClaimModal = ({ report, onClose, onSuccess }) => {
             <label className="input-label" style={{ fontWeight: 700, color: '#fff', marginBottom: 6 }}>
               Ownership Verification Question *
             </label>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 8, padding: '0.6rem 0.85rem', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 6 }}>
-              "Please describe any distinctive markings, serial numbers, wallpapers, or proof of ownership for '{report.item_name}'."
+            <div style={{ fontSize: '0.88rem', color: '#fff', marginBottom: 8, padding: '0.75rem 1rem', backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: 8 }}>
+              ❓ {report.verification_question && report.verification_question.trim() ? report.verification_question : `Please describe any distinctive markings, serial numbers, wallpapers, or proof of ownership for '${report.item_name}'.`}
             </div>
             <textarea
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
               rows={4}
               className="input-field"
-              placeholder="e.g. Back has a small scratch near bottom left; wallpaper is a mountain landscape; serial number starts with C02..."
+              placeholder="Type your answer to the question above..."
               required
             />
           </div>

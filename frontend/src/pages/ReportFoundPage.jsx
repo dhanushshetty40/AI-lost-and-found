@@ -16,6 +16,8 @@ export const ReportFoundPage = () => {
   const [color, setColor] = useState('');
   const [distinctiveFeatures, setDistinctiveFeatures] = useState('');
   const [additionalInfo, setAdditionalInfo] = useState('');
+  const [verificationQuestion, setVerificationQuestion] = useState('');
+  const [confidentialNotes, setConfidentialNotes] = useState('');
   const [location, setLocation] = useState('');
   const [incidentDate, setIncidentDate] = useState(new Date().toISOString().split('T')[0]);
   const [incidentTime, setIncidentTime] = useState('');
@@ -82,6 +84,8 @@ export const ReportFoundPage = () => {
         color: color.trim() || null,
         distinctive_features: distinctiveFeatures.trim() || null,
         additional_info: additionalInfo.trim() || null,
+        verification_question: verificationQuestion.trim() || null,
+        confidential_notes: confidentialNotes.trim() || null,
         location: location.trim(),
         incident_date: incidentDate,
         incident_time: incidentTime || null,
@@ -251,6 +255,41 @@ export const ReportFoundPage = () => {
               value={distinctiveFeatures}
               onChange={(e) => setDistinctiveFeatures(e.target.value)}
             />
+          </div>
+
+          {/* Verification Challenge Question (Feature 2) */}
+          <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: 'var(--radius-md)', padding: '1.25rem', marginBottom: '1.5rem' }}>
+            <div className="form-group" style={{ marginBottom: '1rem' }}>
+              <label className="form-label" style={{ color: 'var(--accent-emerald)', fontWeight: 700 }}>
+                🔒 Secret Verification Question for Claimant (Optional)
+              </label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="e.g. What cartoon keychain is on the zipper? / What wallpaper is on the lockscreen?"
+                value={verificationQuestion}
+                onChange={(e) => setVerificationQuestion(e.target.value)}
+              />
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
+                The claimant will be required to answer this exact question when filing an ownership claim.
+              </span>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" style={{ color: 'var(--accent-emerald)', fontWeight: 700 }}>
+                🔐 Hidden Confidential Notes (Only revealed to Approved Claimant)
+              </label>
+              <textarea
+                className="form-textarea"
+                rows="2"
+                placeholder="e.g. Kept safely in Admin Locker #14 / Contact finder after approval at desk 4"
+                value={confidentialNotes}
+                onChange={(e) => setConfidentialNotes(e.target.value)}
+              />
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
+                This is strictly hidden from the public catalog and only unlocked once you verify and approve the owner.
+              </span>
+            </div>
           </div>
 
           {/* Image Upload with Preview */}

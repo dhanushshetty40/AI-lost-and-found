@@ -177,6 +177,24 @@ export const ReportDetailModal = ({ report, onClose, onClaimItem, onRefresh }) =
             </div>
           )}
 
+          {/* Verification Challenge Notice if present */}
+          {report.verification_question && (
+            <div style={{
+              padding: '0.85rem 1rem',
+              backgroundColor: 'rgba(16, 185, 129, 0.08)',
+              border: '1px solid rgba(16, 185, 129, 0.25)',
+              borderRadius: 'var(--radius-md)',
+              marginBottom: '1.25rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', color: 'var(--accent-emerald)', fontWeight: 700, marginBottom: 4 }}>
+                <ShieldCheck size={16} /> Ownership Verification Challenge
+              </div>
+              <p style={{ fontSize: '0.88rem', color: '#fff' }}>
+                Finder requires claimants to answer: <em>"{report.verification_question}"</em>
+              </p>
+            </div>
+          )}
+
           {/* Embedded Lifecycle Stepper Timeline */}
           <div style={{ marginBottom: '1.5rem' }}>
             <LifecycleTimeline reportId={report.id} />

@@ -1,7 +1,7 @@
 import math
 import difflib
 from datetime import datetime
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
 import os
 
 try:
@@ -12,6 +12,11 @@ except ImportError:
     SKLEARN_AVAILABLE = False
 
 from app.models.report import Report
+from app.services.vision_service import (
+    resolve_image_path,
+    compare_two_images_with_gemini,
+    extract_features_from_single_image
+)
 
 def calculate_text_similarity(text1: str, text2: str) -> float:
     """Calculate text similarity using TF-IDF cosine similarity or difflib fallback."""
@@ -132,54 +137,103 @@ def calculate_date_similarity(date_str1: str, date_str2: str) -> float:
         return 50.0
 
 
-def calculate_image_similarity(img_url1: str, img_url2: str, text_sim: float) -> float:
-    """Calculate visual feature similarity or fallback visual compatibility score (0-100)."""
-    if img_url1 and img_url2:
-        # Both reports uploaded images: check if identical image URL or compute feature similarity
-        if img_url1 == img_url2:
-            return 100.0
-        # If both exist, compute high feature similarity aligned with visual attributes
-        return round(max(75.0, min(95.0, text_sim + 10.0)), 2)
-    elif not img_url1 and not img_url2:
-        # Neither has image: use text/attribute correlation
-        return round(text_sim * 0.85, 2)
-    else:
-        # One has image, one doesn't: neutral visual baseline score
-        return round(text_sim * 0.75, 2)
-
-
 def compute_multimodal_match(lost_report: Report, found_report: Report) -> Dict[str, Any]:
     """
     Computes complete multimodal similarity score between a Lost report and a Found report.
-    Returns scores, confidence level, and explainable AI breakdown.
+    Integrates Gemini Vision analysis for micro-features (keychains, marks, tags)
+    and handles single-image and no-image edge cases without error.
     """
-    # Combine full item text descriptions
     lost_full_text = f"{lost_report.item_name} {lost_report.description} {lost_report.brand or ''} {lost_report.color or ''} {lost_report.distinctive_features or ''}"
     found_full_text = f"{found_report.item_name} {found_report.description} {found_report.brand or ''} {found_report.color or ''} {found_report.distinctive_features or ''}"
     
-    # 1. Text Similarity (30%)
+    # 1. Text Similarity
     text_score = calculate_text_similarity(lost_full_text, found_full_text)
     
-    # 2. Attribute Similarity (20%)
+    # 2. Attribute Similarity
     attribute_score = calculate_attribute_similarity(lost_report, found_report)
     
-    # 3. Location Similarity (15%)
+    # 3. Location Similarity
     location_score = calculate_location_similarity(lost_report.location, found_report.location)
     
-    # 4. Date Proximity (10%)
+    # 4. Date Proximity
     date_score = calculate_date_similarity(lost_report.incident_date, found_report.incident_date)
     
-    # 5. Image Similarity (25%)
-    image_score = calculate_image_similarity(lost_report.image_url, found_report.image_url, text_score)
+    # 5. Image & Vision Analysis (Gemini + Local Fallback)
+    path_lost = resolve_image_path(lost_report.image_url)
+    path_found = resolve_image_path(found_report.image_url)
     
-    # Weighted Combined Overall Match Score (0 - 100)
-    overall_score = (
-        (0.30 * text_score) +
-        (0.25 * image_score) +
-        (0.20 * attribute_score) +
-        (0.15 * location_score) +
-        (0.10 * date_score)
-    )
+    image_score = 0.0
+    image_mode = "NONE"
+    vision_notes = []
+    
+    if path_lost and path_found:
+        image_mode = "BOTH"
+        gemini_res = compare_two_images_with_gemini(path_lost, path_found)
+        if gemini_res and "similarity_score" in gemini_res:
+            image_score = float(gemini_res["similarity_score"])
+            if gemini_res.get("matched_features"):
+                for feat in gemini_res["matched_features"]:
+                    vision_notes.append(f"✓ Gemini Vision Detected Match: {feat}")
+            if gemini_res.get("explanation"):
+                vision_notes.append(f"📷 Vision Analysis: {gemini_res['explanation']}")
+        else:
+            # Fallback if no Gemini key or offline
+            image_score = round(max(75.0, min(95.0, text_score + 10.0)), 2)
+            vision_notes.append(f"📷 Visual compatibility baseline ({image_score}%) computed.")
+            
+    elif path_lost or path_found:
+        image_mode = "SINGLE"
+        active_path = path_lost or path_found
+        target_text = found_full_text if path_lost else lost_full_text
+        
+        gemini_tags = extract_features_from_single_image(active_path)
+        if gemini_tags:
+            extracted_items = gemini_tags.get("distinctive_features", []) + gemini_tags.get("colors", [])
+            matches = []
+            for item in extracted_items:
+                if str(item).lower() in target_text.lower():
+                    matches.append(item)
+            if matches:
+                image_score = round(min(100.0, text_score + 20.0), 2)
+                vision_notes.append(f"✓ Image-to-Text Match: Image visual feature(s) '{', '.join(matches)}' verified in description.")
+            else:
+                image_score = round(text_score * 0.85, 2)
+                vision_notes.append("ℹ 1 Image Analyzed: Visual attributes cross-referenced with report text.")
+        else:
+            image_score = round(text_score * 0.85, 2)
+            vision_notes.append("ℹ Single photo provided; visual score adjusted via text correlation.")
+    else:
+        image_mode = "NONE"
+        image_score = round(text_score * 0.80, 2)
+
+    # Dynamic Weight Rebalancing
+    if image_mode == "BOTH":
+        # Balanced 5-way ensemble
+        overall_score = (
+            (0.30 * text_score) +
+            (0.25 * image_score) +
+            (0.20 * attribute_score) +
+            (0.15 * location_score) +
+            (0.10 * date_score)
+        )
+    elif image_mode == "SINGLE":
+        # Mildly reduce image weight, boost text and attributes
+        overall_score = (
+            (0.35 * text_score) +
+            (0.15 * image_score) +
+            (0.25 * attribute_score) +
+            (0.15 * location_score) +
+            (0.10 * date_score)
+        )
+    else:
+        # 0 images: redistribute image weight completely into text, attributes & spatial
+        overall_score = (
+            (0.40 * text_score) +
+            (0.25 * attribute_score) +
+            (0.20 * location_score) +
+            (0.15 * date_score)
+        )
+
     overall_score = round(max(0.0, min(100.0, overall_score)), 2)
     
     # Determine Confidence Level
@@ -213,13 +267,23 @@ def compute_multimodal_match(lost_report: Report, found_report: Report) -> Dict[
     if lost_report.color and found_report.color and lost_report.color.lower() in found_report.color.lower():
         explanations.append(f"✓ Color Match: Compatible color profile ({lost_report.color} / {found_report.color}).")
 
-    # Location reasoning
+    # Distinctive features keyword overlap
+    d1 = (lost_report.distinctive_features or "").strip().lower()
+    d2 = (found_report.distinctive_features or "").strip().lower()
+    if d1 and d2:
+        common_words = set(d1.split()).intersection(set(d2.split()))
+        stop_words = {"the", "a", "an", "and", "or", "in", "on", "at", "with", "is"}
+        sig_words = [w for w in common_words if w not in stop_words and len(w) > 2]
+        if sig_words:
+            explanations.append(f"✓ Key Detail Match: Shared distinctive keyword(s): '{', '.join(sig_words)}'.")
+
+    # Spatial reasoning
     if location_score >= 80.0:
         explanations.append(f"✓ High Spatial Proximity ({location_score}%): Reported in same campus zone ('{lost_report.location}').")
     elif location_score >= 50.0:
         explanations.append(f"ℹ Moderate Location Proximity ({location_score}%): Nearby campus locations.")
         
-    # Date reasoning
+    # Temporal reasoning
     if date_score >= 90.0:
         explanations.append(f"✓ Immediate Time Proximity ({date_score}%): Reported on same or consecutive dates ({lost_report.incident_date}).")
     elif date_score >= 50.0:
@@ -227,9 +291,8 @@ def compute_multimodal_match(lost_report: Report, found_report: Report) -> Dict[
     else:
         explanations.append(f"⚠ Distant Date Window ({date_score}%): Incident dates differ by more than a week.")
 
-    # Image feature reasoning
-    if lost_report.image_url and found_report.image_url:
-        explanations.append(f"📷 Image Embedding Comparison ({image_score}%): Visual features and color histograms evaluated.")
+    # Vision notes from Gemini/Image analysis
+    explanations.extend(vision_notes)
 
     return {
         "overall_score": overall_score,
@@ -239,5 +302,6 @@ def compute_multimodal_match(lost_report: Report, found_report: Report) -> Dict[
         "location_score": location_score,
         "date_score": date_score,
         "attribute_score": attribute_score,
-        "explanation": explanations
+        "explanation": explanations,
+        "explanations": explanations
     }

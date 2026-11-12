@@ -21,6 +21,10 @@ class Report(Base):
     distinctive_features = Column(Text, nullable=True)
     additional_info = Column(Text, nullable=True)
     
+    # Feature 2: Finder-Generated Verification Question and Confidential Notes
+    verification_question = Column(Text, nullable=True)
+    confidential_notes = Column(Text, nullable=True)
+    
     location = Column(String(255), nullable=False, index=True)
     incident_date = Column(String(50), nullable=False)
     incident_time = Column(String(50), nullable=True)

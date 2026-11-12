@@ -25,6 +25,8 @@ class ReportBase(BaseModel):
     color: Optional[str] = None
     distinctive_features: Optional[str] = None
     additional_info: Optional[str] = None
+    verification_question: Optional[str] = None
+    confidential_notes: Optional[str] = None
     location: str = Field(..., min_length=2, max_length=255)
     incident_date: str = Field(..., description="YYYY-MM-DD format")
     incident_time: Optional[str] = None
@@ -41,6 +43,8 @@ class ReportUpdate(BaseModel):
     color: Optional[str] = None
     distinctive_features: Optional[str] = None
     additional_info: Optional[str] = None
+    verification_question: Optional[str] = None
+    confidential_notes: Optional[str] = None
     location: Optional[str] = None
     incident_date: Optional[str] = None
     incident_time: Optional[str] = None

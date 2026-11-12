@@ -73,7 +73,11 @@ def create_claim(
     if existing:
         raise HTTPException(status_code=400, detail="You already have an active claim filed for this item.")
         
-    ver_question = f"Please describe any distinctive markings, serial numbers, wallpapers, or proof of ownership for '{report.item_name}'."
+    # Use finder-specified custom question if set; otherwise fallback to default
+    if report.verification_question and report.verification_question.strip():
+        ver_question = report.verification_question.strip()
+    else:
+        ver_question = f"Please describe any distinctive markings, serial numbers, wallpapers, or proof of ownership for '{report.item_name}'."
     ver_score = calculate_verification_score(claim_in.verification_answer, report)
     
     new_claim = Claim(

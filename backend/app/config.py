@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./smartfind.db")
 
+    # Gemini Vision API Key (Optional with graceful fallback)
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+
     class Config:
         case_sensitive = True
 
